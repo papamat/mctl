@@ -45,9 +45,9 @@ scripts/lsf-display
 
 The launcher uses `config/lsf/mctl/config.toml` as an isolated configuration and does not overwrite the user's
 normal configuration. Reorder its `[[vehicle]]` blocks to change satellite order; remove a block to exclude it.
-Recording is disabled to reduce SD-card writes. The profile has no assumed LSF location: its observer is
-explicitly `UNCONFIGURED SITE` at 0,0. **Configure the lab's actual latitude, longitude and altitude before
-using PASS/SKY predictions**; those predictions otherwise refer to 0,0, not the lab.
+Recording is disabled to reduce SD-card writes. The observer is `LSF LAB`, using operator-supplied coordinates
+37.999040378659245 N, 23.706396222021784 E (2026-11-05). Altitude was not supplied and remains an explicit
+temporary assumption of 0 m; update `observer.fallback.alt_m` when the measured altitude is available.
 
 `config/lsf/themes/green.toml` independently controls the four CRT effects. Scanlines and mild curvature are
 on; bloom and persistence are off by default. Enable bloom for subtle glow only after measuring the Pi.

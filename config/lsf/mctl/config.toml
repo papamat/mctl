@@ -10,12 +10,13 @@ enabled = false
 
 [observer]
 geoclue = false
-# Configure a surveyed LSF observer site before using local pass predictions.
+# Lab coordinates supplied by the operator on 2026-11-05.
 
 [observer.fallback]
-name = "UNCONFIGURED SITE"
-lat_deg = 0.0
-lon_deg = 0.0
+name = "LSF LAB"
+lat_deg = 37.999040378659245
+lon_deg = 23.706396222021784
+# Altitude not supplied: temporary 0 m assumption; update when measured.
 alt_m = 0.0
 
 [[vehicle]]
