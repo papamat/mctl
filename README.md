@@ -1,3 +1,25 @@
+# LSF Mission Control
+
+This branch customizes [LiamDroog/mctl](https://github.com/LiamDroog/mctl) for the Libre Space Foundation's
+permanent 4:3 mission-control display. The original project's history, credits and GPL-3.0-or-later license
+are retained below.
+
+The LSF profile tracks PHASMA, SIDLOC, NIS-PQ and PICOBUS v2/OSSIE-D, with operator-supplied wireframe
+models, a green phosphor theme, optional TFT CRT effects and automatic cycling without upstream gallery
+interludes. Provisional SIDLOC object associations are explicitly marked `[ID?]`.
+
+See [LSF setup, catalog verification and deployment](docs/lsf-mission-control.md).
+For the complete presentation after building:
+
+```sh
+LSF_STYLE=mixed scripts/lsf-display --size 640x480
+# Omit --size for fullscreen.
+```
+
+The LSF Actions workflow builds x86-64 and aarch64 artifacts; Raspberry Pi hardware validation is pending.
+
+---
+
 # mctl
 
 mctl is a spacecraft display written in Rust. It follows the ISS, the Crew and Cargo Dragons that visit it,
