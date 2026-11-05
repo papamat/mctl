@@ -745,7 +745,23 @@ mod lsf_tests {
         )
         .unwrap();
         let ids: Vec<_> = cfg.vehicles.iter().map(|v| v.norad).collect();
-        assert_eq!(ids, [66681, 66673, 60239]);
+        assert_eq!(
+            ids,
+            [
+                66681, 66673, 60239, 101092, 101097, 101103, 101096, 101093, 100933
+            ]
+        );
+        assert!(cfg.rules.is_empty());
+        for v in cfg
+            .vehicles
+            .iter()
+            .filter(|v| v.id.starts_with("sidloc-pq-"))
+        {
+            assert!(
+                v.name.contains("[ID?]"),
+                "provisional identity must remain visible"
+            );
+        }
         assert!(cfg.vehicles.iter().all(|v| v.telemetry.is_none()));
     }
 }

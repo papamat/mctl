@@ -33,7 +33,52 @@ sources = ["gp"]
 
 [[vehicle]]
 id = "sidloc-01"
-name = "SIDLOC-01 (INACTIVE)"
+name = "SIDLOC ARIANE [OFF]"
 # Hosted on ARIANE 6 R/B, COSPAR 2024-128E. Orbit, not live telemetry.
 norad = 60239
+sources = ["gp"]
+
+# SatNOGS COSPAR crosswalk to official CelesTrak objects, checked 2026-11-05.
+# [ID?]: satellite association is provisional; the orbital catalog object is real.
+# Never use SatNOGS temporary 98xxx numbers as NORAD IDs.
+[[vehicle]]
+id = "sidloc-pq-03"
+name = "SIDLOC PQ-03 [ID?]"
+# SatNOGS 98204 -> 2026-227CE -> TRANSPORTER-18 OBJECT CE
+norad = 101092
+sources = ["gp"]
+
+[[vehicle]]
+id = "sidloc-pq-04"
+name = "SIDLOC PQ-04 [ID?]"
+# SatNOGS 98203 -> 2026-227CK -> TRANSPORTER-18 OBJECT CK
+norad = 101097
+sources = ["gp"]
+
+[[vehicle]]
+id = "sidloc-pq-05"
+name = "SIDLOC PQ-05 [ID?]"
+# SatNOGS 98202 -> 2026-227CR -> TRANSPORTER-18 OBJECT CR
+norad = 101103
+sources = ["gp"]
+
+[[vehicle]]
+id = "sidloc-pq-06"
+name = "SIDLOC PQ-06 [ID?]"
+# SatNOGS 98201 -> 2026-227CJ -> TRANSPORTER-18 OBJECT CJ
+norad = 101096
+sources = ["gp"]
+
+[[vehicle]]
+id = "nis-pq"
+name = "NIS-PQ"
+# CelesTrak names the object NIS-PQ, 2026-227CF.
+norad = 101093
+sources = ["gp"]
+
+[[vehicle]]
+id = "picobus-v2"
+name = "PICOBUS V2 / OSSIE-D"
+# Hosted deployer: propagate OSSIE D (2026-227BC), not an independent spacecraft.
+norad = 100933
 sources = ["gp"]

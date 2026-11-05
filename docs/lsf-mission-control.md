@@ -10,8 +10,9 @@ CelesTrak GP propagation. It does not claim to receive LSF spacecraft telemetry.
 | PHASMA-DIRAC | 66681 | Operational; enabled, CelesTrak GP epoch 2026-11-04T17:42:45.046368 UTC |
 | PHASMA-LAMARR | 66673 | Operational; enabled, GP epoch 2026-11-03T10:30:13.595040 UTC |
 | SIDLOC-01 | 60239 | Inactive hosted payload on ARIANE 6 R/B (2024-128E); orbit only, labeled INACTIVE |
-| SIDLOC PQ-03/04/05/06 | Not yet verified | In orbit per LSF; 98204/98203/98202/98201 are provisional SatNOGS identifiers, excluded |
-| NIS-PQ / QUBIK-5 | Not yet verified | In orbit per LSF; provisional 98225 is excluded |
+| SIDLOC PQ-03/04/05/06 | 101092 / 101097 / 101103 / 101096 | Enabled with `[ID?]`; provisional identity crosswalk detailed below |
+| NIS-PQ / QUBIK-5 | 101093 | Enabled; CelesTrak names it NIS-PQ, 2026-227CF |
+| PICOBUS v2 on OSSIE-D | 100933 | Hosted deployer; follows OSSIE D, 2026-227BC |
 | QUBIK-1/2 | None | Launch failure, excluded |
 | QUBIK-3/4 | Historical | Decayed, excluded |
 
@@ -134,3 +135,46 @@ individual view selection, simulation fixtures and that soak are outstanding; no
 - Headless LSF dense kiosk: eight 640x480 PNGs rendered using cached live elements and llvmpipe Vulkan;
   PHASMA MASTER visually inspected. EGL probing logged driver errors, but Vulkan rendering succeeded.
 - No Raspberry Pi measurements, ARM workflow run, reboot test or 24-hour soak yet.
+
+
+## Expanded inventory and provisional identification
+
+Added on 2026-11-05 after checking the CelesTrak Transporter-18 GP catalog and the international designators
+in the SatNOGS TLEs. `[ID?]` means the satellite-to-object association is provisional, not a simulated orbit.
+We fetch the real catalog object's GP record by its official NORAD number. Do not remove this flag until
+operator/catalog identification is confirmed. Fresh orbital elements do not prove transmitter health.
+
+| Display | SatNOGS temporary ID | COSPAR in SatNOGS TLE | Official NORAD | CelesTrak name |
+|---|---:|---|---:|---|
+| SIDLOC PQ-03 [ID?] | 98204 | 2026-227CE | 101092 | TRANSPORTER-18 OBJECT CE |
+| SIDLOC PQ-04 [ID?] | 98203 | 2026-227CK | 101097 | TRANSPORTER-18 OBJECT CK |
+| SIDLOC PQ-05 [ID?] | 98202 | 2026-227CR | 101103 | TRANSPORTER-18 OBJECT CR |
+| SIDLOC PQ-06 [ID?] | 98201 | 2026-227CJ | 101096 | TRANSPORTER-18 OBJECT CJ |
+| NIS-PQ | 98225 | 2026-227CF | 101093 | NIS-PQ |
+| PICOBUS V2 / OSSIE-D | — | 2026-227BC | 100933 | OSSIE D |
+
+Sources: SatNOGS [PQ-03](https://db.satnogs.org/satellite/KPJP-2422-8913-1094-0450/),
+[PQ-04](https://db.satnogs.org/satellite/MFOR-9210-8363-3251-4177/),
+[PQ-05](https://db.satnogs.org/satellite/KVOS-4539-2765-7785-6036/),
+[PQ-06](https://db.satnogs.org/satellite/UNLT-7458-6697-2171-0383/),
+[NIS-PQ](https://db.satnogs.org/satellite/ZKZZ-3777-2014-2860-9930/), and
+[CelesTrak Transporter-18 GP](https://celestrak.org/NORAD/elements/gp.php?INTDES=2026-227&FORMAT=JSON).
+PICOBUS v2 remains on OSSIE-D as confirmed by the operator; it is not modeled as a separately orbiting object.
+SIDLOC ARIANE [OFF] likewise follows ARIANE 6 R/B and remains an inactive hosted payload.
+
+## Spacecraft artwork inputs
+
+The current renderer uses rotating 3D line segments, not textured triangle meshes. Upstream models are
+procedural Rust geometry in `crates/mctl-gui/src/art.rs`; no OBJ/STL/glTF importer currently exists.
+LSF vehicles currently have orbit/ground-track/pass views but no custom spacecraft artwork.
+
+For an accurate lightweight model, supply a simple OBJ with separate body, panels and antennas (few hundred
+edges preferred), or STEP/STL to convert. An OBJ is an input for conversion, not yet a drop-in app asset.
+For reconstruction from images, provide front/side/top or two to three oblique views, approximate dimensions,
+and the deployed antenna/panel configuration. One photo supports only an approximate schematic: hidden
+geometry cannot be recovered reliably. For hosted payloads, supply both payload and host placement, so the
+view can distinguish SIDLOC on Ariane 6 from PICOBUS v2 on OSSIE-D. Geometry conversion should preserve
+structural edges and remove coplanar mesh diagonals to keep Pi rendering cheap.
+
+Expanded-profile validation: both application unit tests passed; `mctl check` accepted nine GP records
+plus IERS EOP (all ten sources OK). No renderer or propagator change was required for the extra vehicles.
