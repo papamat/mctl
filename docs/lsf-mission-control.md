@@ -166,8 +166,8 @@ SIDLOC ARIANE [OFF] likewise follows ARIANE 6 R/B and remains an inactive hosted
 
 The current renderer uses rotating 3D line segments, not textured triangle meshes. Upstream models are
 procedural Rust geometry in `crates/mctl-gui/src/art.rs`; no runtime OBJ/STL/glTF importer exists; the development-time OBJ converter is described below.
-SIDLOC PQ-03/04/05/06 and NIS-PQ now share the operator-supplied PocketQube model. Other LSF
-vehicles still have orbit/ground-track/pass views without custom spacecraft artwork.
+All nine configured LSF vehicles now have operator-supplied artwork: a shared PocketQube mesh for
+SIDLOC PQ-03/04/05/06 and NIS-PQ, a shared PHASMA mesh, and separate SIDLOC Ariane and PICOBUS v2 meshes.
 
 For an accurate lightweight model, supply a simple OBJ with separate body, panels and antennas (few hundred
 edges preferred), or STEP/STL to convert. An OBJ is an input for conversion, not yet a drop-in app asset.
@@ -244,3 +244,22 @@ LSF_STYLE=pretty LSF_DWELL=18 scripts/lsf-display --size 640x480 --kiosk-vehicle
 
 Validation: seven artwork tests, Clippy with warnings denied and release build passed. PHASMA-DIRAC
 was rendered and visually inspected at 640x480 on software Vulkan; both PHASMA IDs resolve to the same mesh.
+
+
+## PICOBUS v2 model
+
+The operator's `picobus low poly.obj` is preserved as `assets/spacecraft/picobus-v2.obj` and mapped to
+`picobus-v2`: 136 vertices and 248 unique polygon-boundary edges. The supplied deployer geometry is
+centered and uniformly scaled with its orientation retained. Materials are omitted for monochrome rendering.
+The artwork depicts PICOBUS v2, while the orbital solution continues to use its host OSSIE D (NORAD 100933).
+It does not imply that PICOBUS is separately orbiting or that the model depicts the entire host spacecraft.
+
+```sh
+python3 tools/obj_to_wireframe.py assets/spacecraft/picobus-v2.obj crates/mctl-gui/src/art/picobus.rs
+cargo fmt --all
+cargo build --release --locked -p mctl
+LSF_STYLE=pretty LSF_DWELL=18 scripts/lsf-display --size 640x480 --kiosk-vehicles picobus-v2
+```
+
+Validation: eight artwork tests, Clippy with warnings denied and release build passed. PICOBUS v2 was
+rendered and visually inspected at 640x480 on software Vulkan.

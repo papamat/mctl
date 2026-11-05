@@ -42,3 +42,7 @@ embedded. The OBJ did not include a standalone asset license.
 `spacecraft/phasma.obj` was supplied by the project operator on 2026-11-05 as `phasnma low poly.obj`, for
 both PHASMA-DIRAC and PHASMA-LAMARR. Its derived wireframe is `crates/mctl-gui/src/art/phasma.rs`.
 No material files are embedded; no standalone asset license was included in the OBJ.
+
+`spacecraft/picobus-v2.obj` was supplied by the project operator on 2026-11-05 as `picobus low poly.obj`,
+for PICOBUS v2. Its derived wireframe is `crates/mctl-gui/src/art/picobus.rs`. No material files are embedded;
+no standalone asset license was included in the OBJ.

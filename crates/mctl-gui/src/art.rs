@@ -7,6 +7,7 @@ use egui::{Color32, Painter, Pos2, Rect, Shape, Stroke, vec2};
 use crate::theme::Theme;
 
 mod phasma;
+mod picobus;
 mod pocketqube;
 mod sidloc_ariane;
 
@@ -891,6 +892,7 @@ pub fn model(id: &str) -> Option<Model> {
         }
         "sidloc-01" => sidloc_ariane::model(),
         "phasma-dirac" | "phasma-lamarr" => phasma::model(),
+        "picobus-v2" => picobus::model(),
         "iss" => iss(),
         "hubble" => hubble(),
         "jwst" => jwst(),
@@ -1131,6 +1133,25 @@ mod tests {
         assert_eq!(m.segs, model("phasma-lamarr").unwrap().segs);
         assert_eq!(m.segs.len(), 417);
         assert!((radius(&m) - 4.0).abs() < 1e-5);
+        assert!(
+            m.segs
+                .iter()
+                .all(|s| s.a != s.b && s.a.iter().chain(&s.b).all(|x| x.is_finite()))
+        );
+        for axis in 0..3 {
+            let points: Vec<_> = m.segs.iter().flat_map(|s| [s.a[axis], s.b[axis]]).collect();
+            let lo = points.iter().copied().fold(f32::INFINITY, f32::min);
+            let hi = points.iter().copied().fold(f32::NEG_INFINITY, f32::max);
+            assert!((lo + hi).abs() < 1e-5);
+        }
+    }
+
+    #[test]
+    fn picobus_uses_the_operator_deployer_mesh() {
+        let m = model("picobus-v2").unwrap();
+        assert_eq!(m.segs.len(), 248);
+        assert!((radius(&m) - 4.0).abs() < 1e-5);
+        assert_ne!(m.segs, model("nis-pq").unwrap().segs);
         assert!(
             m.segs
                 .iter()
