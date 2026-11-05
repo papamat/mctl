@@ -165,8 +165,9 @@ SIDLOC ARIANE [OFF] likewise follows ARIANE 6 R/B and remains an inactive hosted
 ## Spacecraft artwork inputs
 
 The current renderer uses rotating 3D line segments, not textured triangle meshes. Upstream models are
-procedural Rust geometry in `crates/mctl-gui/src/art.rs`; no OBJ/STL/glTF importer currently exists.
-LSF vehicles currently have orbit/ground-track/pass views but no custom spacecraft artwork.
+procedural Rust geometry in `crates/mctl-gui/src/art.rs`; no runtime OBJ/STL/glTF importer exists; the development-time OBJ converter is described below.
+SIDLOC PQ-03/04/05/06 and NIS-PQ now share the operator-supplied PocketQube model. Other LSF
+vehicles still have orbit/ground-track/pass views without custom spacecraft artwork.
 
 For an accurate lightweight model, supply a simple OBJ with separate body, panels and antennas (few hundred
 edges preferred), or STEP/STL to convert. An OBJ is an input for conversion, not yet a drop-in app asset.
@@ -178,3 +179,33 @@ structural edges and remove coplanar mesh diagonals to keep Pi rendering cheap.
 
 Expanded-profile validation: both application unit tests passed; `mctl check` accepted nine GP records
 plus IERS EOP (all ten sources OK). No renderer or propagator change was required for the extra vehicles.
+
+
+## SIDLOC PQ / NIS-PQ model
+
+The operator's `SIDLOC_PQ_LOGO.obj` is preserved as `assets/spacecraft/sidloc-pq.obj`.
+It contains 20 vertices and nine quad faces, converted to 24 unique polygon-boundary edges (no diagonals).
+The geometry is centered on its bounding box and uniformly scaled to radius 4; its original orientation
+is retained. Textures/materials are ignored for the monochrome wireframe. This is display artwork, not
+measured attitude or a dynamics model. All five spacecraft share it as requested.
+
+Regenerate after editing the OBJ:
+
+```sh
+python3 tools/obj_to_wireframe.py assets/spacecraft/sidloc-pq.obj crates/mctl-gui/src/art/pocketqube.rs
+cargo fmt --all
+cargo build --release --locked -p mctl
+```
+
+The converter runs at development time; the Pi requires neither Python nor an OBJ loader. Polygon edges
+are embedded in the executable. Use `LSF_STYLE=pretty LSF_DWELL=18 scripts/lsf-display` (or `mixed`) to see
+artwork in the automatic cycle; `dense` shows only console pages. To preview just these models:
+
+```sh
+LSF_STYLE=pretty LSF_DWELL=18 scripts/lsf-display --size 640x480 \
+  --kiosk-vehicles sidloc-pq-03,sidloc-pq-04,sidloc-pq-05,sidloc-pq-06,nis-pq
+```
+
+Model validation: five artwork tests passed, including shared geometry, centering and radius checks;
+Clippy with warnings denied and the release build passed. The NIS-PQ artwork was rendered and visually
+inspected at 640x480 using software Vulkan.

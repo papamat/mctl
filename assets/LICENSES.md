@@ -27,3 +27,10 @@ GPL-3.0-or-later; none of the licences below conflict with that. Verified 2026-1
 ## Dependency fonts
 
 egui's `default-fonts` feature embeds additional fonts (Ubuntu-Light, Hack, NotoEmoji, emoji-icon-font) with their own licences. mctl builds egui **without** that feature, so only the fonts above are in the binary.
+
+## LSF operator-supplied geometry
+
+`spacecraft/sidloc-pq.obj` was supplied by the project operator on 2026-11-05 as the shared SIDLOC PQ / NIS-PQ
+model. The original geometry is preserved; `crates/mctl-gui/src/art/pocketqube.rs` is the centered, uniformly
+scaled wireframe derived from it. No external material/texture files are embedded. No standalone asset
+license was supplied with the OBJ; this entry records provenance rather than assigning one.

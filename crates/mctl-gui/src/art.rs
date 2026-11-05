@@ -6,6 +6,8 @@ use egui::{Color32, Painter, Pos2, Rect, Shape, Stroke, vec2};
 
 use crate::theme::Theme;
 
+mod pocketqube;
+
 type P3 = [f32; 3];
 
 /// One line of the model; `major` lines are the vehicle's main structure, the rest detail.
@@ -882,6 +884,9 @@ pub const EXTRAS: &[Extra] = &[
 /// The art for a vehicle id, if there is some.
 pub fn model(id: &str) -> Option<Model> {
     let mut m = match id {
+        "sidloc-pq-03" | "sidloc-pq-04" | "sidloc-pq-05" | "sidloc-pq-06" | "nis-pq" => {
+            pocketqube::model()
+        }
         "iss" => iss(),
         "hubble" => hubble(),
         "jwst" => jwst(),
@@ -1068,6 +1073,32 @@ mod tests {
             );
         }
         assert!(model("unknown").is_none());
+    }
+
+    #[test]
+    fn operator_pocketqube_mesh_is_shared_centered_and_lightweight() {
+        let reference = model("nis-pq").unwrap();
+        assert_eq!(reference.segs.len(), 24);
+        assert!((radius(&reference) - 4.0).abs() < 1e-5);
+        for axis in 0..3 {
+            let points: Vec<_> = reference
+                .segs
+                .iter()
+                .flat_map(|s| [s.a[axis], s.b[axis]])
+                .collect();
+            let lo = points.iter().copied().fold(f32::INFINITY, f32::min);
+            let hi = points.iter().copied().fold(f32::NEG_INFINITY, f32::max);
+            assert!((lo + hi).abs() < 1e-5);
+        }
+        for id in [
+            "sidloc-pq-03",
+            "sidloc-pq-04",
+            "sidloc-pq-05",
+            "sidloc-pq-06",
+        ] {
+            assert_eq!(model(id).unwrap().segs, reference.segs);
+        }
+        assert!(reference.segs.iter().all(|s| s.a != s.b));
     }
 
     #[test]
