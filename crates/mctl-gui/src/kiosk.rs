@@ -58,6 +58,8 @@ pub struct KioskConfig {
     pub cycle_themes: bool,
     /// Use the theme's effect settings (opt-in for TFT displays).
     pub effects: bool,
+    /// Include non-mission gallery interludes.
+    pub gallery: bool,
     /// Vehicle ids to show; empty means every vehicle.
     pub vehicles: Vec<String>,
 }

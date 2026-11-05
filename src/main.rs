@@ -132,6 +132,9 @@ struct Cli {
     /// Enable theme-configured CRT effects on a TFT kiosk; each effect is controlled by its theme TOML.
     #[arg(long, global = true, requires = "kiosk")]
     kiosk_effects: bool,
+    /// Omit gallery interludes (Falcon 9, Shuttle and Earth/ISS orbit) from the kiosk cycle.
+    #[arg(long, global = true, requires = "kiosk")]
+    kiosk_no_gallery: bool,
     /// With `--kiosk`, which scenes to cycle through.
     #[arg(
         long,
@@ -618,6 +621,7 @@ fn main() -> Result<()> {
             let opts = mctl_gui::ShotOptions {
                 kiosk: cli.kiosk.then(|| cli.kiosk_style.into()),
                 kiosk_effects: cli.kiosk_effects,
+                kiosk_no_gallery: cli.kiosk_no_gallery,
                 size: mctl_gui::parse_size(&size)?,
                 theme,
                 out_dir,
@@ -700,6 +704,7 @@ fn main() -> Result<()> {
                         order: cli.kiosk_order.into(),
                         cycle_themes: cli.kiosk_theme_cycle,
                         effects: cli.kiosk_effects,
+                        gallery: !cli.kiosk_no_gallery,
                         vehicles: cli.kiosk_vehicles.clone(),
                     }),
                     present: match g.present {

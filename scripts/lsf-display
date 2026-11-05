@@ -20,4 +20,5 @@ else
           --kiosk-order "${LSF_ORDER:-sequential}" --dwell "${LSF_DWELL:-12}"
           --max-fps "${LSF_MAX_FPS:-10}" --no-record)
 fi
+args+=(--kiosk-no-gallery)
 exec "$bin" "${args[@]}" "$@"

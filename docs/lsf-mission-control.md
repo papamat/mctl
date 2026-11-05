@@ -66,7 +66,8 @@ Launcher environment settings:
 | `LSF_MAX_FPS` | `10` | Frame-rate ceiling |
 | `LSF_EFFECTS` | `1` | `0` disables post-processing entirely |
 
-Pretty/mixed modes retain upstream art/interludes; individual scene selection is not implemented yet.
+The LSF launcher always passes `--kiosk-no-gallery`: Falcon 9, Shuttle and the Earth/ISS-orbit
+interludes are excluded in all scene mixes. Individual mission-view selection is not implemented yet.
 Pretty scenes use base dwell, interludes 0.6 times base dwell. Choose `LSF_DWELL=18` for pretty scenes.
 The launcher is fullscreen unless you pass `--windowed` or `--size 640x480` for workstation inspection.
 
@@ -263,3 +264,6 @@ LSF_STYLE=pretty LSF_DWELL=18 scripts/lsf-display --size 640x480 --kiosk-vehicle
 
 Validation: eight artwork tests, Clippy with warnings denied and release build passed. PICOBUS v2 was
 rendered and visually inspected at 640x480 on software Vulkan.
+
+`--kiosk-no-gallery` also filters headless kiosk screenshots. Normal upstream kiosk operation keeps its
+gallery unless this flag is supplied; the LSF vehicle list contains no ISS spacecraft.

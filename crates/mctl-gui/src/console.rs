@@ -139,6 +139,7 @@ struct Kiosk {
     /// Whether each scene is shown in a different random theme.
     cycle_themes: bool,
     effects: bool,
+    gallery: bool,
     /// Vehicles to show; empty for all.
     only: Vec<String>,
     rng: crate::kiosk::Rng,
@@ -662,6 +663,7 @@ impl Console {
             order: cfg.order,
             cycle_themes: cfg.cycle_themes,
             effects: cfg.effects,
+            gallery: cfg.gallery,
             only: cfg.vehicles,
             rng: crate::kiosk::Rng::from_clock(),
             plan: Vec::new(),
@@ -690,6 +692,10 @@ impl Console {
         self.camera.orbit_by((KIOSK_DRIFT_DEG_S * dt) as f32, 0.0);
         if k.planned_for != scenes.len() || k.plan.is_empty() {
             k.plan = crate::kiosk::plan(&scenes, k.order, &k.only, None, &mut k.rng);
+            if !k.gallery {
+                k.plan
+                    .retain(|&i| matches!(scenes[i], crate::kiosk::Scene::Vehicle(..)));
+            }
             k.planned_for = scenes.len();
             k.pos = k.pos.min(k.plan.len().saturating_sub(1));
         }
@@ -709,6 +715,10 @@ impl Console {
                 // A new pass, in a new order that does not open on the scene this one closed with.
                 let last = k.plan.get(k.pos).copied();
                 k.plan = crate::kiosk::plan(&scenes, k.order, &k.only, last, &mut k.rng);
+                if !k.gallery {
+                    k.plan
+                        .retain(|&i| matches!(scenes[i], crate::kiosk::Scene::Vehicle(..)));
+                }
                 k.pos = 0;
             } else {
                 k.pos = next.max(0) as usize;
@@ -1224,6 +1234,7 @@ mod tests {
                 order: crate::kiosk::Order::Sequential,
                 cycle_themes: cycle,
                 effects: false,
+                gallery: true,
                 vehicles: Vec::new(),
             });
             c.advance_kiosk(&w);
@@ -1258,6 +1269,7 @@ mod tests {
             order: crate::kiosk::Order::Sequential,
             cycle_themes: true,
             effects: true,
+            gallery: true,
             vehicles: Vec::new(),
         });
         let w = crate::kiosk::test_world(3);
@@ -1272,6 +1284,27 @@ mod tests {
     }
 
     #[test]
+    fn mission_only_kiosk_excludes_gallery_across_cycle_wraps() {
+        let (mut c, _rx) = console();
+        let w = crate::kiosk::test_world(3);
+        c.set_kiosk(crate::kiosk::KioskConfig {
+            dwell_s: 1.0,
+            mix: crate::kiosk::Mix::Mixed,
+            order: crate::kiosk::Order::Sequential,
+            cycle_themes: false,
+            effects: false,
+            gallery: false,
+            vehicles: Vec::new(),
+        });
+        let scenes = crate::kiosk::scenes(&w, crate::kiosk::Mix::Mixed);
+        for n in 0..(scenes.len() * 3) {
+            c.now_s = n as f64 * 3.0;
+            let (idx, _) = c.advance_kiosk(&w).unwrap();
+            assert!(matches!(scenes[idx], crate::kiosk::Scene::Vehicle(..)));
+        }
+    }
+
+    #[test]
     fn the_kiosk_cycles_on_its_dwell_and_ignores_the_operating_keys() {
         let (mut c, _rx) = console();
         let w = crate::kiosk::test_world(3);
@@ -1281,6 +1314,7 @@ mod tests {
             order: crate::kiosk::Order::Sequential,
             cycle_themes: false,
             effects: false,
+            gallery: true,
             vehicles: Vec::new(),
         });
         assert!(!c.toggles.any(), "the CRT does the effects");
