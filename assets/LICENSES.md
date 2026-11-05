@@ -38,3 +38,7 @@ license was supplied with the OBJ; this entry records provenance rather than ass
 `spacecraft/sidloc-ariane.obj` was supplied by the same project operator on 2026-11-05 as the SIDLOC Ariane
 payload model. Its derived wireframe is `crates/mctl-gui/src/art/sidloc_ariane.rs`; no material files are
 embedded. The OBJ did not include a standalone asset license.
+
+`spacecraft/phasma.obj` was supplied by the project operator on 2026-11-05 as `phasnma low poly.obj`, for
+both PHASMA-DIRAC and PHASMA-LAMARR. Its derived wireframe is `crates/mctl-gui/src/art/phasma.rs`.
+No material files are embedded; no standalone asset license was included in the OBJ.

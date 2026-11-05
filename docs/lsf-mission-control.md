@@ -227,3 +227,20 @@ LSF_STYLE=pretty LSF_DWELL=18 scripts/lsf-display --size 640x480 --kiosk-vehicle
 
 Validation: 52 input vertices, 88 unique edges; six artwork tests, Clippy with warnings denied and release
 build passed. The SIDLOC Ariane artwork was rendered and visually inspected at 640x480 on software Vulkan.
+
+## PHASMA model
+
+Both PHASMA-DIRAC and PHASMA-LAMARR use the operator-supplied `phasnma low poly.obj`, preserved as
+`assets/spacecraft/phasma.obj`: 224 vertices and 417 unique polygon edges. No triangulation or shape
+simplification is applied. The model is centered and uniformly scaled, with its original orientation retained.
+This artwork is shared; each spacecraft retains its own orbital data and identification.
+
+```sh
+python3 tools/obj_to_wireframe.py assets/spacecraft/phasma.obj crates/mctl-gui/src/art/phasma.rs
+cargo fmt --all
+cargo build --release --locked -p mctl
+LSF_STYLE=pretty LSF_DWELL=18 scripts/lsf-display --size 640x480 --kiosk-vehicles phasma-dirac,phasma-lamarr
+```
+
+Validation: seven artwork tests, Clippy with warnings denied and release build passed. PHASMA-DIRAC
+was rendered and visually inspected at 640x480 on software Vulkan; both PHASMA IDs resolve to the same mesh.
