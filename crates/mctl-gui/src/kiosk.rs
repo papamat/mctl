@@ -60,6 +60,8 @@ pub struct KioskConfig {
     pub effects: bool,
     /// Include non-mission gallery interludes.
     pub gallery: bool,
+    /// Include a globe and map of the selected Earth-orbiting fleet.
+    pub overview: bool,
     /// Vehicle ids to show; empty means every vehicle.
     pub vehicles: Vec<String>,
 }
@@ -139,6 +141,7 @@ pub fn plan(
     let mut groups: Vec<(Option<&str>, Vec<usize>)> = Vec::new();
     for (i, sc) in scenes.iter().enumerate() {
         match sc {
+            Scene::Fleet => continue,
             Scene::Vehicle(v, _)
                 if groups
                     .last()
@@ -181,6 +184,9 @@ pub fn plan(
     };
     if order == Order::Random && out.len() > 1 && Some(out[0]) == previous {
         out.swap(0, 1);
+    }
+    if let Some(i) = scenes.iter().position(|s| matches!(s, Scene::Fleet)) {
+        out.insert(0, i);
     }
     out
 }
@@ -262,6 +268,7 @@ impl View {
 pub enum Scene<'a> {
     Vehicle(&'a VehicleView, View),
     Extra(&'static Extra),
+    Fleet,
 }
 
 impl Scene<'_> {
@@ -270,13 +277,14 @@ impl Scene<'_> {
         match self {
             Self::Vehicle(_, v) if v.dense() => dwell_s * DENSE_DWELL_FACTOR,
             Self::Vehicle(..) => dwell_s,
+            Self::Fleet => dwell_s * DENSE_DWELL_FACTOR,
             Self::Extra(_) => dwell_s * EXTRA_DWELL_FRACTION,
         }
     }
 
     /// Whether the scene wants the dense (small) font.
     pub fn dense(&self) -> bool {
-        matches!(self, Self::Vehicle(_, v) if v.dense())
+        matches!(self, Self::Fleet) || matches!(self, Self::Vehicle(_, v) if v.dense())
     }
 }
 
@@ -350,6 +358,15 @@ pub fn scenes(world: &World, mix: Mix) -> Vec<Scene<'_>> {
     }
     if mix != Mix::Dense {
         out.extend(extras.map(Scene::Extra));
+    }
+    out
+}
+
+/// Fleet overview is opt-in and independent of non-mission gallery interludes.
+pub fn configured_scenes(world: &World, mix: Mix, overview: bool) -> Vec<Scene<'_>> {
+    let mut out = scenes(world, mix);
+    if overview {
+        out.insert(0, Scene::Fleet);
     }
     out
 }
@@ -769,6 +786,29 @@ fn marks(world: &World, current: Option<&str>, held: bool) -> String {
 }
 
 pub fn render(grid: &mut Grid, inp: &KioskInput<'_>) -> Layout {
+    if matches!(inp.scene, Scene::Fleet) {
+        centre(grid, 0, "FLEET OVERVIEW", Style::new(Role::Bright));
+        let utc = inp.world.t.iso();
+        centre(
+            grid,
+            grid.rows.saturating_sub(1),
+            &format!(
+                "{} UTC  |  ORBITS / GROUND TRACKS  |  {}",
+                &utc[11..19],
+                if inp.held { "HOLD" } else { "EARTH" }
+            ),
+            Style::new(Role::Dim),
+        );
+        return Layout {
+            fleet: Some(CellRect::new(
+                2,
+                2,
+                grid.cols.saturating_sub(4),
+                grid.rows.saturating_sub(4),
+            )),
+            ..Layout::default()
+        };
+    }
     if let Scene::Vehicle(v, view) = inp.scene
         && view.dense()
     {
@@ -803,6 +843,7 @@ pub fn render(grid: &mut Grid, inp: &KioskInput<'_>) -> Layout {
     let (title, art_id, earth) = match inp.scene {
         Scene::Vehicle(v, _) => (vehicle_name(v), v.id.as_str(), v.regime == Regime::Earth),
         Scene::Extra(e) => (e.title.to_owned(), e.id, true),
+        Scene::Fleet => unreachable!("fleet rendered above"),
     };
     centre(grid, SAFE_TOP, &title, bright);
 
@@ -859,6 +900,7 @@ pub fn render(grid: &mut Grid, inp: &KioskInput<'_>) -> Layout {
                 centre(grid, footer + 1 + i, &text, *style);
             }
         }
+        Scene::Fleet => unreachable!("fleet rendered above"),
         Scene::Extra(e) => {
             centre(grid, footer + 1, e.caption, bright);
         }
@@ -866,7 +908,7 @@ pub fn render(grid: &mut Grid, inp: &KioskInput<'_>) -> Layout {
 
     let current = match inp.scene {
         Scene::Vehicle(v, _) => Some(v.id.as_str()),
-        Scene::Extra(_) => None,
+        Scene::Extra(_) | Scene::Fleet => None,
     };
     centre(
         grid,
@@ -912,6 +954,34 @@ pub(crate) fn test_world(n: usize) -> World {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn overview_survives_vehicle_selection_and_is_once_per_cycle() {
+        let w = test_world(3);
+        for mix in [Mix::Mixed, Mix::Dense, Mix::Pretty] {
+            let scenes = configured_scenes(&w, mix, true);
+            for order in [Order::Sequential, Order::Random, Order::Vehicle] {
+                let plan = plan(&scenes, order, &["v1".into()], None, &mut Rng::new(17));
+                assert!(matches!(scenes[plan[0]], Scene::Fleet));
+                assert_eq!(
+                    plan.iter()
+                        .filter(|&&i| matches!(scenes[i], Scene::Fleet))
+                        .count(),
+                    1
+                );
+                assert!(plan.iter().all(|&i| match scenes[i] {
+                    Scene::Fleet => true,
+                    Scene::Vehicle(v, _) => v.id == "v1",
+                    Scene::Extra(_) => true,
+                }));
+            }
+        }
+        assert!(
+            !configured_scenes(&w, Mix::Mixed, false)
+                .iter()
+                .any(|s| matches!(s, Scene::Fleet))
+        );
+    }
 
     #[test]
     fn the_cycle_visits_every_vehicle_and_every_piece_of_art_once() {
@@ -983,7 +1053,7 @@ mod tests {
     fn vehicle_of(scenes: &[Scene<'_>], i: usize) -> Option<String> {
         match scenes[i] {
             Scene::Vehicle(v, _) => Some(v.id.clone()),
-            Scene::Extra(_) => None,
+            Scene::Extra(_) | Scene::Fleet => None,
         }
     }
 

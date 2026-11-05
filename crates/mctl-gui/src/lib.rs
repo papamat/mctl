@@ -13,6 +13,7 @@ mod commands;
 mod console;
 mod deep;
 mod flags;
+mod fleet;
 mod fonts;
 mod globe;
 mod gpu;

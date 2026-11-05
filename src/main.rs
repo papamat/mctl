@@ -135,6 +135,9 @@ struct Cli {
     /// Omit gallery interludes (Falcon 9, Shuttle and Earth/ISS orbit) from the kiosk cycle.
     #[arg(long, global = true, requires = "kiosk")]
     kiosk_no_gallery: bool,
+    /// Add a fleet overview with a globe and world map to the kiosk cycle.
+    #[arg(long, global = true, requires = "kiosk")]
+    kiosk_overview: bool,
     /// With `--kiosk`, which scenes to cycle through.
     #[arg(
         long,
@@ -622,6 +625,7 @@ fn main() -> Result<()> {
                 kiosk: cli.kiosk.then(|| cli.kiosk_style.into()),
                 kiosk_effects: cli.kiosk_effects,
                 kiosk_no_gallery: cli.kiosk_no_gallery,
+                kiosk_overview: cli.kiosk_overview,
                 size: mctl_gui::parse_size(&size)?,
                 theme,
                 out_dir,
@@ -705,6 +709,7 @@ fn main() -> Result<()> {
                         cycle_themes: cli.kiosk_theme_cycle,
                         effects: cli.kiosk_effects,
                         gallery: !cli.kiosk_no_gallery,
+                        overview: cli.kiosk_overview,
                         vehicles: cli.kiosk_vehicles.clone(),
                     }),
                     present: match g.present {

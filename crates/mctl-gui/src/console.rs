@@ -140,6 +140,7 @@ struct Kiosk {
     cycle_themes: bool,
     effects: bool,
     gallery: bool,
+    overview: bool,
     /// Vehicles to show; empty for all.
     only: Vec<String>,
     rng: crate::kiosk::Rng,
@@ -664,6 +665,7 @@ impl Console {
             cycle_themes: cfg.cycle_themes,
             effects: cfg.effects,
             gallery: cfg.gallery,
+            overview: cfg.overview,
             only: cfg.vehicles,
             rng: crate::kiosk::Rng::from_clock(),
             plan: Vec::new(),
@@ -684,7 +686,7 @@ impl Console {
     fn advance_kiosk(&mut self, world: &World) -> Option<(usize, bool)> {
         let now = self.now_s;
         let mix = self.kiosk.as_ref()?.mix;
-        let scenes = crate::kiosk::scenes(world, mix);
+        let scenes = crate::kiosk::configured_scenes(world, mix, self.kiosk.as_ref()?.overview);
         let k = self.kiosk.as_mut()?;
         // The orbit map turns slowly by itself, since nobody is there to drag it.
         let dt = (now - k.last_s).clamp(0.0, 0.5);
@@ -694,7 +696,7 @@ impl Console {
             k.plan = crate::kiosk::plan(&scenes, k.order, &k.only, None, &mut k.rng);
             if !k.gallery {
                 k.plan
-                    .retain(|&i| matches!(scenes[i], crate::kiosk::Scene::Vehicle(..)));
+                    .retain(|&i| !matches!(scenes[i], crate::kiosk::Scene::Extra(_)));
             }
             k.planned_for = scenes.len();
             k.pos = k.pos.min(k.plan.len().saturating_sub(1));
@@ -717,7 +719,7 @@ impl Console {
                 k.plan = crate::kiosk::plan(&scenes, k.order, &k.only, last, &mut k.rng);
                 if !k.gallery {
                     k.plan
-                        .retain(|&i| matches!(scenes[i], crate::kiosk::Scene::Vehicle(..)));
+                        .retain(|&i| !matches!(scenes[i], crate::kiosk::Scene::Extra(_)));
                 }
                 k.pos = 0;
             } else {
@@ -824,7 +826,7 @@ impl Console {
         let kiosk_scene = self.advance_kiosk(world);
         // The dense scenes of the Pi display use a smaller font to fit a console's worth on the tube.
         if let (Some((scene, _)), Some(k)) = (kiosk_scene, self.kiosk.as_ref())
-            && crate::kiosk::scenes(world, k.mix)
+            && crate::kiosk::configured_scenes(world, k.mix, k.overview)
                 .get(scene)
                 .is_some_and(|s| s.dense())
         {
@@ -890,7 +892,7 @@ impl Console {
             settings: &self.settings,
         };
         let layout = if let (Some((scene, held)), Some(k)) = (kiosk_scene, self.kiosk.as_ref()) {
-            let scenes = crate::kiosk::scenes(world, k.mix);
+            let scenes = crate::kiosk::configured_scenes(world, k.mix, k.overview);
             match scenes.get(scene) {
                 Some(sc) => crate::kiosk::render(
                     &mut grid,
@@ -979,6 +981,12 @@ impl Console {
             _ => None,
         };
 
+        let fleet_px = layout.fleet.map(|r| cell_rect_px(&theme, r));
+        let fleet_only = self
+            .kiosk
+            .as_ref()
+            .map(|k| k.only.as_slice())
+            .unwrap_or(&[]);
         let coast = &self.coast_110m;
         let font = fonts::font_id(&theme);
         let now = world.t;
@@ -1033,6 +1041,17 @@ impl Console {
                     .and_then(|v| world.plans.iter().find(|(id, _)| *id == v.id))
                     .map(|(_, p)| &**p);
                 crate::widgets::paint(&painter, &theme, *px, w, vehicle, plan, &prox_views, now);
+            }
+            if let Some(px) = fleet_px {
+                crate::fleet::paint(
+                    &painter,
+                    &theme,
+                    px,
+                    coast,
+                    world,
+                    fleet_only,
+                    stats.elapsed_s,
+                );
             }
             if let Some(px) = sky_px {
                 let site = world.observer.active_site();
@@ -1235,6 +1254,7 @@ mod tests {
                 cycle_themes: cycle,
                 effects: false,
                 gallery: true,
+                overview: false,
                 vehicles: Vec::new(),
             });
             c.advance_kiosk(&w);
@@ -1270,6 +1290,7 @@ mod tests {
             cycle_themes: true,
             effects: true,
             gallery: true,
+            overview: false,
             vehicles: Vec::new(),
         });
         let w = crate::kiosk::test_world(3);
@@ -1294,6 +1315,7 @@ mod tests {
             cycle_themes: false,
             effects: false,
             gallery: false,
+            overview: false,
             vehicles: Vec::new(),
         });
         let scenes = crate::kiosk::scenes(&w, crate::kiosk::Mix::Mixed);
@@ -1301,6 +1323,32 @@ mod tests {
             c.now_s = n as f64 * 3.0;
             let (idx, _) = c.advance_kiosk(&w).unwrap();
             assert!(matches!(scenes[idx], crate::kiosk::Scene::Vehicle(..)));
+        }
+    }
+
+    #[test]
+    fn mission_overview_survives_cycle_wraps() {
+        let (mut c, _rx) = console();
+        let w = crate::kiosk::test_world(3);
+        c.set_kiosk(crate::kiosk::KioskConfig {
+            dwell_s: 1.0,
+            mix: crate::kiosk::Mix::Mixed,
+            order: crate::kiosk::Order::Sequential,
+            cycle_themes: false,
+            effects: false,
+            gallery: false,
+            overview: true,
+            vehicles: Vec::new(),
+        });
+        let scenes = crate::kiosk::configured_scenes(&w, crate::kiosk::Mix::Mixed, true);
+        for n in 0..(scenes.len() * 3) {
+            c.now_s = n as f64 * 3.0;
+            let (idx, _) = c.advance_kiosk(&w).unwrap();
+            assert!(!matches!(scenes[idx], crate::kiosk::Scene::Extra(_)));
+            assert!(matches!(
+                scenes[c.kiosk.as_ref().unwrap().plan[0]],
+                crate::kiosk::Scene::Fleet
+            ));
         }
     }
 
@@ -1315,6 +1363,7 @@ mod tests {
             cycle_themes: false,
             effects: false,
             gallery: true,
+            overview: false,
             vehicles: Vec::new(),
         });
         assert!(!c.toggles.any(), "the CRT does the effects");

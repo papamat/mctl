@@ -21,4 +21,7 @@ else
           --max-fps "${LSF_MAX_FPS:-10}" --no-record)
 fi
 args+=(--kiosk-no-gallery)
+if [[ "${LSF_OVERVIEW:-1}" == 1 ]]; then
+    args+=(--kiosk-overview)
+fi
 exec "$bin" "${args[@]}" "$@"

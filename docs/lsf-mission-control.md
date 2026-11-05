@@ -267,3 +267,29 @@ rendered and visually inspected at 640x480 on software Vulkan.
 
 `--kiosk-no-gallery` also filters headless kiosk screenshots. Normal upstream kiosk operation keeps its
 gallery unless this flag is supplied; the LSF vehicle list contains no ISS spacecraft.
+
+## Fleet overview
+
+The LSF launcher enables `--kiosk-overview` by default. Set `LSF_OVERVIEW=0` to omit it.
+This opt-in upstream-compatible scene opens each kiosk cycle, including dense and pretty mixes,
+and remains available with `--kiosk-no-gallery`. It shows a rotating orthographic Earth beside
+an equirectangular world map, with numbered spacecraft positions, orbital paths and a shared vehicle legend.
+The globe uses GCRF orbit samples transformed into a common Earth-fixed frame at the snapshot time,
+with altitude to scale and Earth occultation. The map uses subsatellite positions at each sample
+time, so its ground tracks include Earth rotation. These are propagated states, not telemetry.
+The globe hides the far hemisphere; the map shows every available position. Coastlines use the
+existing Natural Earth asset and vector drawing; there are no new textures, shaders or dependencies.
+
+Only configured Earth-orbiting vehicles are included, respecting `--kiosk-vehicles` in the live kiosk.
+Vehicle names preserve `[ID?]` and `[OFF]` labels. Missing solutions remain in the legend as `NO DATA`
+and are not placed on either map. A larger fleet uses a paginated legend. The overview stays up for
+1.5 times the configured dwell (18 seconds with the LSF default). A fleet overview screenshot is
+included in `--kiosk --kiosk-overview shot` output. Normal upstream behavior is unchanged unless
+the flag is supplied.
+
+Validation for the fleet overview: 144 GUI tests passed, 2 existing GPU tests ignored; workspace
+Clippy (all targets, warnings denied), release build and shell syntax checks passed. A 640x480
+headless screenshot using cached LSF elements was visually checked with all nine positions present.
+
+Fleet paths reuse cached engine tracks. Historical segments are solid and predicted segments dashed;
+ground tracks break at the antimeridian. Missing tracks are never synthesized.

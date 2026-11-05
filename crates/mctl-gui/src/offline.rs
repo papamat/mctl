@@ -231,6 +231,7 @@ pub struct ShotOptions {
     pub effects_off: bool,
     pub kiosk_effects: bool,
     pub kiosk_no_gallery: bool,
+    pub kiosk_overview: bool,
     pub warmup_frames: u64,
     /// `page`, `page:sub` or `all`.
     pub pages: Vec<String>,
@@ -320,18 +321,21 @@ pub fn shots(live: &Live, themes: Vec<Theme>, opts: &ShotOptions) -> Result<Vec<
             cycle_themes: false,
             effects: opts.kiosk_effects,
             gallery: !opts.kiosk_no_gallery,
+            overview: opts.kiosk_overview,
             vehicles: Vec::new(),
         });
         if opts.effects_off {
             off.console.toggles = EffectToggles::all(false);
         }
         let world = live.bus.latest();
-        let scenes = crate::kiosk::scenes(&world, mix);
+        let scenes = crate::kiosk::configured_scenes(&world, mix, opts.kiosk_overview);
+        let mut display_index = 0;
         for (n, scene) in scenes.iter().enumerate() {
             if opts.kiosk_no_gallery && matches!(scene, crate::kiosk::Scene::Extra(_)) {
                 continue;
             }
-            off.console.set_kiosk_scene(n);
+            off.console.set_kiosk_scene(display_index);
+            display_index += 1;
             for f in 0..opts.warmup_frames {
                 off.frame(f, 16.7)?;
             }
@@ -747,6 +751,7 @@ mod tests {
             effects_off: false,
             kiosk_effects: false,
             kiosk_no_gallery: false,
+            kiosk_overview: false,
             warmup_frames: 40,
             pages: [
                 "gnc:2", "gnc:3", "eps", "tcs", "tcs:2", "comm", "prox", "sys:5",
@@ -850,6 +855,7 @@ mod tests {
                 effects_off: false,
                 kiosk_effects: false,
                 kiosk_no_gallery: false,
+                kiosk_overview: false,
                 warmup_frames: 40,
                 pages: pages.iter().map(|p| (*p).to_owned()).collect(),
                 low_power: false,

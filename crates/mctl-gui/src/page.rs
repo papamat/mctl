@@ -57,6 +57,7 @@ pub struct StatusMsg {
 #[derive(Default)]
 pub struct Layout {
     pub globe: Option<CellRect>,
+    pub fleet: Option<CellRect>,
     pub ground: Option<CellRect>,
     pub eclipse: Option<CellRect>,
     pub adi: Option<CellRect>,
@@ -77,6 +78,7 @@ impl Layout {
         let mv = |r: CellRect| r.shifted(dc, dr);
         Self {
             globe: self.globe.map(mv),
+            fleet: self.fleet.map(mv),
             ground: self.ground.map(mv),
             eclipse: self.eclipse.map(mv),
             adi: self.adi.map(mv),
