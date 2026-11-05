@@ -209,3 +209,21 @@ LSF_STYLE=pretty LSF_DWELL=18 scripts/lsf-display --size 640x480 \
 Model validation: five artwork tests passed, including shared geometry, centering and radius checks;
 Clippy with warnings denied and the release build passed. The NIS-PQ artwork was rendered and visually
 inspected at 640x480 using software Vulkan.
+
+## SIDLOC Ariane model
+
+The operator's `SIDLOC_Ariane.obj` is preserved as `assets/spacecraft/sidloc-ariane.obj` and mapped to
+`sidloc-01`. The artwork depicts the supplied payload geometry, not an invented Ariane upper stage.
+Orbital data still follows ARIANE 6 R/B (60239); the display retains its inactive `[OFF]` label.
+The original orientation and relative proportions are preserved; only centering and uniform display scaling
+are applied, with materials omitted. Regenerate with:
+
+```sh
+python3 tools/obj_to_wireframe.py assets/spacecraft/sidloc-ariane.obj crates/mctl-gui/src/art/sidloc_ariane.rs
+cargo fmt --all
+cargo build --release --locked -p mctl
+LSF_STYLE=pretty LSF_DWELL=18 scripts/lsf-display --size 640x480 --kiosk-vehicles sidloc-01
+```
+
+Validation: 52 input vertices, 88 unique edges; six artwork tests, Clippy with warnings denied and release
+build passed. The SIDLOC Ariane artwork was rendered and visually inspected at 640x480 on software Vulkan.

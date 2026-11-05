@@ -7,6 +7,7 @@ use egui::{Color32, Painter, Pos2, Rect, Shape, Stroke, vec2};
 use crate::theme::Theme;
 
 mod pocketqube;
+mod sidloc_ariane;
 
 type P3 = [f32; 3];
 
@@ -887,6 +888,7 @@ pub fn model(id: &str) -> Option<Model> {
         "sidloc-pq-03" | "sidloc-pq-04" | "sidloc-pq-05" | "sidloc-pq-06" | "nis-pq" => {
             pocketqube::model()
         }
+        "sidloc-01" => sidloc_ariane::model(),
         "iss" => iss(),
         "hubble" => hubble(),
         "jwst" => jwst(),
@@ -1099,6 +1101,26 @@ mod tests {
             assert_eq!(model(id).unwrap().segs, reference.segs);
         }
         assert!(reference.segs.iter().all(|s| s.a != s.b));
+    }
+
+    #[test]
+    fn ariane_payload_uses_its_own_finite_centered_model() {
+        let m = model("sidloc-01").unwrap();
+        assert!(!m.segs.is_empty());
+        assert!(m.segs.len() < 200);
+        assert!((radius(&m) - 4.0).abs() < 1e-5);
+        assert_ne!(m.segs, model("nis-pq").unwrap().segs);
+        assert!(
+            m.segs
+                .iter()
+                .all(|s| s.a != s.b && s.a.iter().chain(&s.b).all(|x| x.is_finite()))
+        );
+        for axis in 0..3 {
+            let points: Vec<_> = m.segs.iter().flat_map(|s| [s.a[axis], s.b[axis]]).collect();
+            let lo = points.iter().copied().fold(f32::INFINITY, f32::min);
+            let hi = points.iter().copied().fold(f32::NEG_INFINITY, f32::max);
+            assert!((lo + hi).abs() < 1e-5);
+        }
     }
 
     #[test]

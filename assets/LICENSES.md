@@ -34,3 +34,7 @@ egui's `default-fonts` feature embeds additional fonts (Ubuntu-Light, Hack, Noto
 model. The original geometry is preserved; `crates/mctl-gui/src/art/pocketqube.rs` is the centered, uniformly
 scaled wireframe derived from it. No external material/texture files are embedded. No standalone asset
 license was supplied with the OBJ; this entry records provenance rather than assigning one.
+
+`spacecraft/sidloc-ariane.obj` was supplied by the same project operator on 2026-11-05 as the SIDLOC Ariane
+payload model. Its derived wireframe is `crates/mctl-gui/src/art/sidloc_ariane.rs`; no material files are
+embedded. The OBJ did not include a standalone asset license.
