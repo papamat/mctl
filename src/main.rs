@@ -33,12 +33,24 @@ fn default_size(pi: bool) -> &'static str {
     }
 }
 
-/// The themes to run with: the CRT theme alone for `--kiosk`, else the embedded or `--themes-dir` set.
-fn themes_for(pi: bool, dir: &Option<PathBuf>) -> anyhow::Result<Vec<mctl_gui::Theme>> {
-    if pi {
+/// Kiosk layout and cheap drawing are independent of optional TFT post-processing.
+fn themes_for(
+    pi: bool,
+    kiosk_effects: bool,
+    dir: &Option<PathBuf>,
+) -> anyhow::Result<Vec<mctl_gui::Theme>> {
+    if pi && !kiosk_effects {
         return Ok(mctl_gui::crt_themes()?);
     }
-    load_themes(dir)
+    let mut themes = load_themes(dir)?;
+    if pi {
+        let font = mctl_gui::crt_themes()?.remove(0).font;
+        for theme in &mut themes {
+            theme.font = font.clone();
+            theme.flat = true;
+        }
+    }
+    Ok(themes)
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -113,10 +125,13 @@ struct Cli {
     /// Start in REPLAY of the recording: `start`, an ISO epoch, or an offset from now such as `-2h`.
     #[arg(long, global = true, value_name = "WHEN")]
     replay: Option<String>,
-    /// The unattended display (the Raspberry Pi / CRT mode): no effects, scenes cycling through the vehicles,
+    /// The unattended display (the Raspberry Pi / CRT mode): scenes cycling through the vehicles,
     /// scaled to fill whatever screen it runs on. (Formerly `--pi`.)
     #[arg(long, global = true, alias = "pi")]
     kiosk: bool,
+    /// Enable theme-configured CRT effects on a TFT kiosk; each effect is controlled by its theme TOML.
+    #[arg(long, global = true, requires = "kiosk")]
+    kiosk_effects: bool,
     /// With `--kiosk`, which scenes to cycle through.
     #[arg(
         long,
@@ -602,6 +617,7 @@ fn main() -> Result<()> {
             let size = size.unwrap_or_else(|| default_size(cli.kiosk).to_owned());
             let opts = mctl_gui::ShotOptions {
                 kiosk: cli.kiosk.then(|| cli.kiosk_style.into()),
+                kiosk_effects: cli.kiosk_effects,
                 size: mctl_gui::parse_size(&size)?,
                 theme,
                 out_dir,
@@ -612,7 +628,12 @@ fn main() -> Result<()> {
                 allow_software: cli.allow_software || cli.kiosk,
                 exec,
             };
-            mctl_gui::shots(&live, themes_for(cli.kiosk, &cli.themes_dir)?, &opts).map(|_| ())
+            mctl_gui::shots(
+                &live,
+                themes_for(cli.kiosk, cli.kiosk_effects, &cli.themes_dir)?,
+                &opts,
+            )
+            .map(|_| ())
         }
         Some(Command::Bench {
             sizes,
@@ -669,7 +690,7 @@ fn main() -> Result<()> {
             let fullscreen = g.fullscreen || (cli.kiosk && g.size.is_none() && !g.windowed);
             let size = g.size.unwrap_or_else(|| default_size(cli.kiosk).to_owned());
             mctl_gui::run(
-                themes_for(cli.kiosk, &cli.themes_dir)?,
+                themes_for(cli.kiosk, cli.kiosk_effects, &cli.themes_dir)?,
                 mctl_gui::Options {
                     size: mctl_gui::parse_size(&size)?,
                     fullscreen,
@@ -678,6 +699,7 @@ fn main() -> Result<()> {
                         mix: cli.kiosk_style.into(),
                         order: cli.kiosk_order.into(),
                         cycle_themes: cli.kiosk_theme_cycle,
+                        effects: cli.kiosk_effects,
                         vehicles: cli.kiosk_vehicles.clone(),
                     }),
                     present: match g.present {
@@ -695,5 +717,35 @@ fn main() -> Result<()> {
                 },
             )
         }
+    }
+}
+
+#[cfg(test)]
+mod lsf_tests {
+    use super::*;
+
+    #[test]
+    fn kiosk_effects_require_kiosk_and_preserve_theme_settings() {
+        assert!(Cli::try_parse_from(["mctl", "--kiosk-effects"]).is_err());
+        assert!(Cli::try_parse_from(["mctl", "--kiosk", "--kiosk-effects"]).is_ok());
+        let plain = themes_for(true, false, &None).unwrap();
+        assert!(plain.iter().all(|t| !t.effects.scanlines.enabled));
+        let tft = themes_for(true, true, &None).unwrap();
+        let green = tft.iter().find(|t| t.name == "Phosphor").unwrap();
+        assert!(green.effects.scanlines.enabled);
+        assert!(green.flat);
+        assert_eq!(green.font.cell_w_px, plain[0].font.cell_w_px);
+    }
+
+    #[test]
+    fn lsf_overlay_replaces_upstream_vehicles_and_rules() {
+        let cfg = Config::from_layers(
+            config::DEFAULT_CONFIG,
+            Some(("lsf", include_str!("../config/lsf/mctl/config.toml"))),
+        )
+        .unwrap();
+        let ids: Vec<_> = cfg.vehicles.iter().map(|v| v.norad).collect();
+        assert_eq!(ids, [66681, 66673, 60239]);
+        assert!(cfg.vehicles.iter().all(|v| v.telemetry.is_none()));
     }
 }

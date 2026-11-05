@@ -138,6 +138,7 @@ struct Kiosk {
     order: crate::kiosk::Order,
     /// Whether each scene is shown in a different random theme.
     cycle_themes: bool,
+    effects: bool,
     /// Vehicles to show; empty for all.
     only: Vec<String>,
     rng: crate::kiosk::Rng,
@@ -660,6 +661,7 @@ impl Console {
             mix: cfg.mix,
             order: cfg.order,
             cycle_themes: cfg.cycle_themes,
+            effects: cfg.effects,
             only: cfg.vehicles,
             rng: crate::kiosk::Rng::from_clock(),
             plan: Vec::new(),
@@ -670,7 +672,7 @@ impl Console {
             held: false,
             last_s: self.now_s,
         });
-        self.toggles = EffectToggles::all(false);
+        self.set_theme(self.theme_idx);
         // No anti-aliasing fringe on lines and shapes: a CRT softens them anyway, and it is a lot of triangles.
         self.ctx.tessellation_options_mut(|o| o.feathering = false);
     }
@@ -756,7 +758,6 @@ impl Console {
             }
             (_, Some(KeyAction::Theme)) => {
                 self.cycle_theme();
-                self.toggles = EffectToggles::all(false);
             }
             _ => {}
         }
@@ -769,7 +770,11 @@ impl Console {
 
     pub fn set_theme(&mut self, idx: usize) {
         self.theme_idx = idx % self.themes.len();
-        self.toggles = EffectToggles::from_theme(&self.theme().effects);
+        self.toggles = if self.kiosk.as_ref().is_some_and(|k| !k.effects) {
+            EffectToggles::all(false)
+        } else {
+            EffectToggles::from_theme(&self.theme().effects)
+        };
         tracing::info!(theme = %self.theme().name, "theme selected");
     }
 
@@ -1218,6 +1223,7 @@ mod tests {
                 mix: crate::kiosk::Mix::Mixed,
                 order: crate::kiosk::Order::Sequential,
                 cycle_themes: cycle,
+                effects: false,
                 vehicles: Vec::new(),
             });
             c.advance_kiosk(&w);
@@ -1238,6 +1244,34 @@ mod tests {
     }
 
     #[test]
+    fn tft_kiosk_keeps_theme_effects_when_scenes_and_themes_change() {
+        let (mut c, _rx) = console();
+        for theme in &mut c.themes {
+            theme.effects.scanlines.enabled = true;
+            theme.effects.bloom.enabled = false;
+            theme.effects.persistence.enabled = false;
+            theme.effects.curvature.enabled = true;
+        }
+        c.set_kiosk(crate::kiosk::KioskConfig {
+            dwell_s: 10.0,
+            mix: crate::kiosk::Mix::Mixed,
+            order: crate::kiosk::Order::Sequential,
+            cycle_themes: true,
+            effects: true,
+            vehicles: Vec::new(),
+        });
+        let w = crate::kiosk::test_world(3);
+        c.advance_kiosk(&w);
+        c.now_s = 11.0;
+        c.advance_kiosk(&w);
+        keys(&mut c, &w, "t");
+        assert!(c.toggles.scanlines);
+        assert!(c.toggles.curvature);
+        assert!(!c.toggles.bloom);
+        assert!(!c.toggles.persistence);
+    }
+
+    #[test]
     fn the_kiosk_cycles_on_its_dwell_and_ignores_the_operating_keys() {
         let (mut c, _rx) = console();
         let w = crate::kiosk::test_world(3);
@@ -1246,6 +1280,7 @@ mod tests {
             mix: crate::kiosk::Mix::Mixed,
             order: crate::kiosk::Order::Sequential,
             cycle_themes: false,
+            effects: false,
             vehicles: Vec::new(),
         });
         assert!(!c.toggles.any(), "the CRT does the effects");

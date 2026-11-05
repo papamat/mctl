@@ -1,7 +1,7 @@
 //! The Raspberry Pi / CRT display (`mctl --kiosk`): big pictures, few numbers, cycling through the vehicles.
 //!
 //! This is a screen for looking at rather than operating, so it is built from the same widgets as the
-//! console but has no pages, no command line and no effects: the tube supplies those.
+//! console but has no pages or command line. Effects are opt-in for TFT displays.
 
 use mctl_core::config::Regime;
 use mctl_core::schedule::Ops;
@@ -56,6 +56,8 @@ pub struct KioskConfig {
     pub order: Order,
     /// Change to another random theme with every scene.
     pub cycle_themes: bool,
+    /// Use the theme's effect settings (opt-in for TFT displays).
+    pub effects: bool,
     /// Vehicle ids to show; empty means every vehicle.
     pub vehicles: Vec<String>,
 }

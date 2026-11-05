@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Run the LSF profile without modifying the user's existing mctl configuration.
+set -euo pipefail
+root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+export XDG_CONFIG_HOME="${LSF_CONFIG_HOME:-$root/config/lsf}"
+bin="${MCTL_BIN:-$root/target/release/mctl}"
+if [[ ! -x "$bin" ]]; then
+    echo "Build with cargo build --release --locked -p mctl, or set MCTL_BIN." >&2
+    exit 1
+fi
+args=(--kiosk --theme 'LSF Green' --themes-dir "$root/config/lsf/themes"
+      --kiosk-style "${LSF_STYLE:-dense}" --kiosk-order "${LSF_ORDER:-sequential}"
+      --dwell "${LSF_DWELL:-12}" --max-fps "${LSF_MAX_FPS:-10}" --no-record)
+# Dense pages use 1.5 * dwell, so 12 means 18 seconds per screen.
+if [[ "${LSF_EFFECTS:-1}" == 1 ]]; then
+    args+=(--kiosk-effects)
+else
+    # Physical CRT mode uses embedded themes and ignores --themes-dir.
+    args=(--kiosk --theme Phosphor --kiosk-style "${LSF_STYLE:-dense}"
+          --kiosk-order "${LSF_ORDER:-sequential}" --dwell "${LSF_DWELL:-12}"
+          --max-fps "${LSF_MAX_FPS:-10}" --no-record)
+fi
+exec "$bin" "${args[@]}" "$@"

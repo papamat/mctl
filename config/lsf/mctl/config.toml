@@ -1,0 +1,38 @@
+# LSF mission control. Verified 2026-11-05; see docs/lsf-mission-control.md.
+# Arrays replace upstream defaults. Reorder these blocks to change kiosk order.
+rule = []
+
+[display]
+max_fps = 10
+
+[store]
+enabled = false
+
+[observer]
+geoclue = false
+# Configure a surveyed LSF observer site before using local pass predictions.
+
+[observer.fallback]
+name = "UNCONFIGURED SITE"
+lat_deg = 0.0
+lon_deg = 0.0
+alt_m = 0.0
+
+[[vehicle]]
+id = "phasma-dirac"
+name = "PHASMA-DIRAC"
+norad = 66681
+sources = ["gp"]
+
+[[vehicle]]
+id = "phasma-lamarr"
+name = "PHASMA-LAMARR"
+norad = 66673
+sources = ["gp"]
+
+[[vehicle]]
+id = "sidloc-01"
+name = "SIDLOC-01 (INACTIVE)"
+# Hosted on ARIANE 6 R/B, COSPAR 2024-128E. Orbit, not live telemetry.
+norad = 60239
+sources = ["gp"]

@@ -229,6 +229,7 @@ pub struct ShotOptions {
     pub theme: Option<String>,
     pub out_dir: PathBuf,
     pub effects_off: bool,
+    pub kiosk_effects: bool,
     pub warmup_frames: u64,
     /// `page`, `page:sub` or `all`.
     pub pages: Vec<String>,
@@ -316,8 +317,12 @@ pub fn shots(live: &Live, themes: Vec<Theme>, opts: &ShotOptions) -> Result<Vec<
             mix,
             order: crate::kiosk::Order::Sequential,
             cycle_themes: false,
+            effects: opts.kiosk_effects,
             vehicles: Vec::new(),
         });
+        if opts.effects_off {
+            off.console.toggles = EffectToggles::all(false);
+        }
         let count = crate::kiosk::scenes(&live.bus.latest(), mix).len();
         for n in 0..count {
             off.console.set_kiosk_scene(n);
@@ -734,6 +739,7 @@ mod tests {
             theme: Some("phosphor".into()),
             out_dir: dir.into(),
             effects_off: false,
+            kiosk_effects: false,
             warmup_frames: 40,
             pages: [
                 "gnc:2", "gnc:3", "eps", "tcs", "tcs:2", "comm", "prox", "sys:5",
@@ -835,6 +841,7 @@ mod tests {
                 theme: theme.map(String::from),
                 out_dir: dir.into(),
                 effects_off: false,
+                kiosk_effects: false,
                 warmup_frames: 40,
                 pages: pages.iter().map(|p| (*p).to_owned()).collect(),
                 low_power: false,

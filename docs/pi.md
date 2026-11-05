@@ -121,3 +121,11 @@ the most. What keeps it down:
 Cross-building for the Pi from another machine needs an aarch64 C compiler (`gcc-aarch64-linux-gnu`) and a
 copy of the Pi's `usr/include` and `usr/lib` to use as the sysroot, so the binary links against the Pi's glibc.
 If SSH to the Pi stalls over Wi-Fi, set `IPQoS none` in both `ssh_config` and the Pi's `sshd_config.d`.
+
+## TFT kiosk displays
+
+For an HDMI/VGA TFT, `--kiosk --kiosk-effects` keeps the kiosk layout, low engine rate and frame cap,
+but takes scanlines, bloom, persistence and curvature from the selected theme. `--themes-dir` is honored
+in this mode. Each effect's `enabled` setting is independent; start with bloom and persistence off on a Pi 3.
+Theme changes keep those settings. Without `--kiosk-effects`, the existing physical-CRT behavior is unchanged.
+Effect hotkeys remain disabled in kiosk mode. See [the LSF profile](lsf-mission-control.md).
