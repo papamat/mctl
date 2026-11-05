@@ -439,9 +439,11 @@ impl Config {
     fn validate(&self) -> Result<(), ConfigError> {
         let bad = |m: String| Err(ConfigError::Invalid(m));
         let o = &self.observer;
-        if !(0.0..=89.0).contains(&o.mask_deg)
-            || !(o.pass_days > 0.0 && o.pass_days <= 14.0)
-            || !(o.step_s >= 1.0 && o.step_s <= 120.0)
+        if !((0.0..=89.0).contains(&o.mask_deg)
+            && o.pass_days > 0.0
+            && o.pass_days <= 14.0
+            && o.step_s >= 1.0
+            && o.step_s <= 120.0)
         {
             return bad(
                 "observer: mask_deg must be 0..89, pass_days in (0, 14], step_s 1..120".into(),
@@ -550,10 +552,11 @@ impl Config {
         if s.horizons.min_refresh_s < 600.0 || s.schedules.min_refresh_s < 600.0 {
             return bad("sources.horizons and sources.schedules: min_refresh_s >= 600".into());
         }
-        if !s.sky.sesame_url.contains("{name}")
-            || !s.sky.hst_program_url.contains("{id}")
-            || !(s.sky.fov_deg > 0.0 && s.sky.fov_deg <= 5.0)
-            || !(64..=2048).contains(&s.sky.size_px)
+        if !(s.sky.sesame_url.contains("{name}")
+            && s.sky.hst_program_url.contains("{id}")
+            && s.sky.fov_deg > 0.0
+            && s.sky.fov_deg <= 5.0
+            && (64..=2048).contains(&s.sky.size_px))
         {
             return bad("sources.sky: sesame_url needs {name}, hst_program_url needs {id}, fov_deg in (0, 5], size_px 64..=2048".into());
         }
