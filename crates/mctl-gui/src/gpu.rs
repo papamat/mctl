@@ -74,7 +74,12 @@ pub fn create(
         } else {
             wgpu::Features::empty()
         },
-        required_limits: wgpu::Limits::default(),
+        // Every render pass (including egui and post-processing) uses one color target.
+        // The generic default requests eight, exceeding the Pi 4 V3D limit of four.
+        required_limits: wgpu::Limits {
+            max_color_attachments: 1,
+            ..wgpu::Limits::default()
+        },
         ..Default::default()
     }))
     .with_context(|| format!("opening device on {}", describe(&info)))?;
